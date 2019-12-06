@@ -1,0 +1,30 @@
+DROP TABLE IF EXISTS Hotel;
+DROP TABLE IF EXISTS Room;
+DROP TABLE IF EXISTS Account;
+DROP TABLE IF EXISTS EventType;
+DROP TABLE IF EXISTS Event;
+
+CREATE TABLE Hotel(
+	id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
+	star Int NOT NULL,
+	locality VARCHAR(100) NOT NULL,
+	street_address VARCHAR(100) NOT NULL
+);
+
+
+CREATE TABLE Room(
+	id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
+	roomtype VARCHAR(100) NOT NULL,
+	roomprice Int Not NULL,
+	number Int Not NULL,
+	hotel_id Int Not NULL
+);
+
+CREATE TABLE Account(
+	sales_id VARCHAR(100) PRIMARY KEY NOT NULL,
+	member_id VARCHAR(100) NOT NULL,
+	number_of_ticket Int NOT NULL,
+	time_of_sales Datetime NOT NULL,
+	event_id VARCHAR(100) NOT NULL
+);
+
