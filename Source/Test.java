@@ -5,6 +5,7 @@ import container.Account;
 import container.SearchInfo;
 
 import database.Database;
+import java.util.HashMap;
 
 public class Test{
 	public static void main(String[] args){
@@ -19,8 +20,8 @@ public class Test{
 		System.out.println(account);
 		System.out.println(searchInfo);
 
+
 		System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		Database db = new Database("../Resource/HotelList.json");
-		db.read_hotel_list();
+		Database db = new Database("../Database/hotel.db", "");
 	}
 }
