@@ -11,25 +11,60 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import container.Hotel;
 import container.Room;
+import java.security.MessageDigest;
+
 
 public class Database{
 	private String dbPath;
 	private String jsonPath;
+	private String initSQLPath;
 	private Connection db_conn;
 	public Database(String dbPath, String jsonPath){
 		// Pass in "" as jsonPath if the database has already established.
 		// Pass in the jsonPath to clear the database and init the database by jsonPath.
 		this.dbPath = dbPath;
 		this.jsonPath = jsonPath;
-		if(!this.jsonPath.equals("")){
-			initDB();
-			establishDB();
+		this.initSQLPath = "Database/init_table.sql";
+		try{
+			File f = new File(this.dbPath);
+			if(!f.exists()){
+				System.out.println("DB file not exist, establishing DB...");
+				initDB();
+				establishDB();
+			}
+		}catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
 	}
 
 	public List<Hotel> getAllHotel(){
+		// Return List of Hotel
+		// Note: To save query time, rooms information will not be included(i.e, Hotel.rooms = null).
 		List<Hotel> hotels = new ArrayList<Hotel>();
 		List<HashMap<String, String>> results = this.selectAll("Hotel");
+		for(HashMap<String, String> result: results){
+			// HashMap<String, String> attr = new HashMap<>();
+			// attr.put("hotel_id", result.get("id"));
+			// List<HashMap<String, String>> roomResults = this.select("Room", attr);
+			// List<Room> rooms = new ArrayList<Room>();
+			// for(HashMap<String, String> roomResult: roomResults){
+			// 	Room room = new Room(roomResult.get("roomtype"), Integer.parseInt(roomResult.get("roomprice")), Integer.parseInt(roomResult.get("number")));
+			// 	rooms.add(room);
+			// }
+			//Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), rooms);
+			Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), null);
+			hotels.add(hotel);
+		}
+		return hotels;
+	}
+
+	public Hotel getHotel(int id){
+		// Return Hotel of specified hotel id. The returned Hotel will include rooms information.
+		// Return null if no such hotel found. 
+		List<Hotel> hotels = new ArrayList<Hotel>();
+		HashMap<String, String> hotel_attr = new HashMap<>();
+		hotel_attr.put("id", Integer.toString(id));
+		List<HashMap<String, String>> results = this.select("Hotel", hotel_attr);
 		for(HashMap<String, String> result: results){
 			HashMap<String, String> attr = new HashMap<>();
 			attr.put("hotel_id", result.get("id"));
@@ -42,31 +77,35 @@ public class Database{
 			Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), rooms);
 			hotels.add(hotel);
 		}
-		return hotels;
+		if(hotels.size() < 1){
+			System.out.println("Get hotel error! hotels.size() < 1");
+			return null;
+		}else{
+			return hotels.get(0);
+		}
 	}
 
-	// public List<Hotel> getHotel(int id){
-	// 	List<Hotel> hotels = new ArrayList<Hotel>();
-	// 	HashMap<String, String> attr = new HashMap<>();
-	// 	List<HashMap<String, String>> results = this.select("Hotel");
-	// 	for(HashMap<String, String> result: results){
-	// 		HashMap<String, String> attr = new HashMap<>();
-	// 		attr.put("hotel_id", result.get("id"));
-	// 		List<HashMap<String, String>> roomResults = this.select("Room", attr);
-	// 		List<Room> rooms = new ArrayList<Room>();
-	// 		for(HashMap<String, String> roomResult: roomResults){
-	// 			Room room = new Room(roomResult.get("roomtype"), Integer.parseInt(roomResult.get("roomprice")), Integer.parseInt(roomResult.get("number")));
-	// 			rooms.add(room);
-	// 		}
-	// 		Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), rooms);
-	// 		hotels.add(hotel);
-	// 	}
-	// 	return hotels;
-	// }
+	public Boolean addAccount(String name, String email, String password){
+		// addAccount will fail if account with same email has existed.
+		HashMap<String, String> attr = new HashMap<>();
+		attr.put("name", name);
+		attr.put("email", email);
+		attr.put("password", hashPassword(password));
+		if(this.insert("Account", attr)) return true;
+		else return false;
+	}
 
-	public void initDB(){
+	public Boolean verifyAccount(String email, String password){
+		HashMap<String, String> attr = new HashMap<>();
+		attr.put("email", email);
+		attr.put("password", hashPassword(password));
+		if(this.select("Account", attr).size() > 0) return true;
+		else return false;
+	}
+
+	private void initDB(){
 	    try{	
-	    	File f = new File("Database/init_table.sql");
+	    	File f = new File(this.initSQLPath);
 	    	Scanner s = new Scanner(f).useDelimiter("(;(\r)?\n)|((\r)?\n)?(--)?.*(--(\r)?\n)");
 	    	Statement st = null;
 	        st = this.connect().createStatement();
@@ -110,7 +149,6 @@ public class Database{
 			}
 			count++;
 		}
-		
 	}
 
 	private Connection connect() {
@@ -125,7 +163,7 @@ public class Database{
 		return conn;
 	}
 
-	private void insert(String table,  HashMap<String, String> attr) {
+	private Boolean insert(String table,  HashMap<String, String> attr) {
 		//String sql = "INSERT INTO JsonHotel (star, locality, street_address) VALUES (1, 'Taipei', 'abc street');";
 		String columns = "", values = "";
 		for(String key: attr.keySet()){
@@ -144,8 +182,10 @@ public class Database{
 			PreparedStatement pstmt = conn.prepareStatement(sql);
 			pstmt.executeUpdate();
 			conn.close();
+			return true;
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
+			return false;
 		}
 	}
 
@@ -154,9 +194,9 @@ public class Database{
 		String conditions = "";
 		for(String key: attr.keySet()){
 			String value = attr.get(key);
-			conditions += key + "=" + "'" + value + "'" + ", ";
+			conditions += key + "=" + "'" + value + "'" + " and ";
 		}
-		conditions = conditions.substring(0, conditions.length()-2);
+		conditions = conditions.substring(0, conditions.length()-5);
 
 		String sql = "SELECT * FROM " + table + " WHERE " + conditions + ";" ;
 		System.out.println(sql);
@@ -208,6 +248,17 @@ public class Database{
 			System.out.println("File not exist!");
 			return null;
 		}
+	}
+
+	private String hashPassword(String password){
+		String encryptedString = "";
+		try{
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+			messageDigest.update(password.getBytes());
+			encryptedString = new String(messageDigest.digest());
+			encryptedString = Base64.getEncoder().encodeToString(encryptedString.getBytes());
+		}catch(Exception e){}
+		return encryptedString;
 	}
 }
 

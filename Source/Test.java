@@ -1,3 +1,4 @@
+
 import container.Hotel;
 import container.Room;
 import container.Order;
@@ -30,9 +31,14 @@ public class Test{
 		List<Hotel> hotels = db.getAllHotel();
 		for(Hotel hotel: hotels){
 			System.out.println(hotel);
-			System.out.println(hotel.rooms);
 		}
+		Hotel hotel = db.getHotel(1);
+		System.out.println(hotel);
+		System.out.println(hotel.rooms);
+
+		System.out.println(db.addAccount("vincent", "aaa@gmail.com", "123"));
+		System.out.println(db.verifyAccount("aaa@gmail.com", "1234"));
+		System.out.println(db.verifyAccount("aaa@gmail.com", "123"));
 		
-		db.initDB();
 	}
 }
