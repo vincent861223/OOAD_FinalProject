@@ -9,13 +9,15 @@ import java.util.*;
 import java.sql.*;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
+import container.Hotel;
+import container.Room;
 
 public class Database{
 	private String dbPath;
 	private String jsonPath;
 	private Connection db_conn;
 	public Database(String dbPath, String jsonPath){
-		// Pass in "" as jsonPath if the db has already established.
+		// Pass in "" as jsonPath if the database has already established.
 		// Pass in the jsonPath to clear the database and init the database by jsonPath.
 		this.dbPath = dbPath;
 		this.jsonPath = jsonPath;
@@ -23,16 +25,44 @@ public class Database{
 			initDB();
 			establishDB();
 		}
-		HashMap<String, String> hotel_attr = new HashMap<>();
-		hotel_attr.put("star", "2");
-		List<HashMap<String, String>> results = this.select("Hotel", hotel_attr);
-		for(HashMap<String, String> result: results){
-			for(String key: result.keySet()){
-				String value = result.get(key);
-				System.out.println(key + ": " + value);
-			}
-		}
 	}
+
+	public List<Hotel> getAllHotel(){
+		List<Hotel> hotels = new ArrayList<Hotel>();
+		List<HashMap<String, String>> results = this.selectAll("Hotel");
+		for(HashMap<String, String> result: results){
+			HashMap<String, String> attr = new HashMap<>();
+			attr.put("hotel_id", result.get("id"));
+			List<HashMap<String, String>> roomResults = this.select("Room", attr);
+			List<Room> rooms = new ArrayList<Room>();
+			for(HashMap<String, String> roomResult: roomResults){
+				Room room = new Room(roomResult.get("roomtype"), Integer.parseInt(roomResult.get("roomprice")), Integer.parseInt(roomResult.get("number")));
+				rooms.add(room);
+			}
+			Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), rooms);
+			hotels.add(hotel);
+		}
+		return hotels;
+	}
+
+	// public List<Hotel> getHotel(int id){
+	// 	List<Hotel> hotels = new ArrayList<Hotel>();
+	// 	HashMap<String, String> attr = new HashMap<>();
+	// 	List<HashMap<String, String>> results = this.select("Hotel");
+	// 	for(HashMap<String, String> result: results){
+	// 		HashMap<String, String> attr = new HashMap<>();
+	// 		attr.put("hotel_id", result.get("id"));
+	// 		List<HashMap<String, String>> roomResults = this.select("Room", attr);
+	// 		List<Room> rooms = new ArrayList<Room>();
+	// 		for(HashMap<String, String> roomResult: roomResults){
+	// 			Room room = new Room(roomResult.get("roomtype"), Integer.parseInt(roomResult.get("roomprice")), Integer.parseInt(roomResult.get("number")));
+	// 			rooms.add(room);
+	// 		}
+	// 		Hotel hotel = new Hotel(Integer.parseInt(result.get("id")), Integer.parseInt(result.get("star")), result.get("locality"), result.get("street_address"), rooms);
+	// 		hotels.add(hotel);
+	// 	}
+	// 	return hotels;
+	// }
 
 	private void initDB(){
 	    try{	
@@ -58,19 +88,19 @@ public class Database{
 	}
 
 	private void establishDB(){
-		Hotel[] hotels = read_hotel_list();
+		JsonHotel[] hotels = read_hotel_list();
 		if(hotels == null){
 			System.out.println("No hotel loaded!\n");
 			return;
 		}
-		int count = 0;
-		for(Hotel hotel: hotels){
+		int count = 1;
+		for(JsonHotel hotel: hotels){
 			HashMap<String, String> hotel_attr = new HashMap<>();
 			hotel_attr.put("star", Integer.toString(hotel.HotelStar));
 			hotel_attr.put("locality", hotel.Locality);
 			hotel_attr.put("street_address", hotel.Street_Address);
 			insert("Hotel", hotel_attr);
-			for(Room room: hotel.Rooms){
+			for(JsonRoom room: hotel.Rooms){
 				HashMap<String, String> room_attr = new HashMap<>();
 				room_attr.put("roomtype", room.RoomType);
 				room_attr.put("roomprice", Integer.toString(room.RoomPrice));
@@ -96,7 +126,7 @@ public class Database{
 	}
 
 	private void insert(String table,  HashMap<String, String> attr) {
-		//String sql = "INSERT INTO Hotel (star, locality, street_address) VALUES (1, 'Taipei', 'abc street');";
+		//String sql = "INSERT INTO JsonHotel (star, locality, street_address) VALUES (1, 'Taipei', 'abc street');";
 		String columns = "", values = "";
 		for(String key: attr.keySet()){
 			String value = attr.get(key);
@@ -120,7 +150,7 @@ public class Database{
 	}
 
 	private List<HashMap<String, String>> select(String table,  HashMap<String, String> attr) {
-		//String sql = "INSERT INTO Hotel (star, locality, street_address) VALUES (1, 'Taipei', 'abc street');";
+		//String sql = "INSERT INTO JsonHotel (star, locality, street_address) VALUES (1, 'Taipei', 'abc street');";
 		String conditions = "";
 		for(String key: attr.keySet()){
 			String value = attr.get(key);
@@ -159,13 +189,19 @@ public class Database{
 		}
 	}
 
-	private Hotel[] read_hotel_list(){
+	private List<HashMap<String, String>> selectAll(String table){
+		HashMap<String, String> attr = new HashMap<>();
+		attr.put("'1'", "1");
+		return this.select(table, attr);
+	}
+
+	private JsonHotel[] read_hotel_list(){
 		Gson gson = new Gson();
 		try {
 			File f = new File(this.jsonPath);
 			InputStreamReader read = new InputStreamReader(new FileInputStream(f),"big5"); 
 			BufferedReader br = new BufferedReader(read);
-			Hotel[] hotels = gson.fromJson(br, Hotel[].class);
+			JsonHotel[] hotels = gson.fromJson(br, JsonHotel[].class);
 			return hotels;
 			//
 		}catch (IOException e) {
@@ -175,21 +211,21 @@ public class Database{
 	}
 }
 
-// This class is for reading json file only
-class Hotel{
+// This class is for reading json file only, please ignore this class. 
+class JsonHotel{
 	public int HotelID; 
 	public int HotelStar; 
 	public String Locality; 
 	@SerializedName("Street-Address")
 	public String Street_Address; 
-	public Room[] Rooms; 
-	// void Hotel(){
-	// 	rooms = new Room[3];
+	public JsonRoom[] Rooms; 
+	// void JsonHotel(){
+	// 	rooms = new JsonRoom[3];
 	// }
 }
 
-// This class is for reading json file only
-class Room{
+// This class is for reading json file only, please ignore this class. 
+class JsonRoom{
 	public String RoomType;
 	public int RoomPrice;
 	public int Number;
