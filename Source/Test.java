@@ -24,7 +24,7 @@ public class Test{
 
 
 		System.out.println("Working Directory = " + System.getProperty("user.dir"));
-		Database db = new Database("../Database/hotel.db", "../Resource/HotelList.json");
+		Database db = new Database("Database/hotel.db", "Resource/HotelList.json");
 
 		// Database db = new Database("../Database/hotel.db", "");
 		List<Hotel> hotels = db.getAllHotel();
@@ -32,5 +32,7 @@ public class Test{
 			System.out.println(hotel);
 			System.out.println(hotel.rooms);
 		}
+		
+		db.initDB();
 	}
 }

@@ -64,9 +64,9 @@ public class Database{
 	// 	return hotels;
 	// }
 
-	private void initDB(){
+	public void initDB(){
 	    try{	
-	    	File f = new File("../Database/init_table.sql");
+	    	File f = new File("Database/init_table.sql");
 	    	Scanner s = new Scanner(f).useDelimiter("(;(\r)?\n)|((\r)?\n)?(--)?.*(--(\r)?\n)");
 	    	Statement st = null;
 	        st = this.connect().createStatement();
