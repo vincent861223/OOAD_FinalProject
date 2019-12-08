@@ -1,33 +1,36 @@
 package container;
 import container.Room;
+import container.Hotel;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Order{
-	public int hotelID;
-	public String locality;
-	public String street;
-	public Room[] selected_room;
+	public Hotel hotel;
+	public String dateIn;
+	public String dateOut;
+	public List<Room> selected_rooms;
 
 	public Order(){
 		//Default constructor
-		this.hotelID = 0;
-		this.locality = "";
-		this.street = "";
+		this.dateIn = "";
+		this.dateOut = "";
 	}
 	
 
-	public Order(int hotelID, String locality, String street){
+	public Order(Hotel hotel, String dateIn, String dateOut, List<Room> selected_rooms){
 		// Parameter constructor
-		this.hotelID = hotelID;
-		this.locality = locality;
-		this.street = street;
+		this.hotel = hotel;
+		this.dateIn = dateIn;
+		this.dateOut = dateOut;
+		this.selected_rooms = selected_rooms;
 	}
 
 	@Override 
 	public String toString() {
 		// return String representation of the class
         return "-----Order-----\n" + 
-        	   "hotelID: " + this.hotelID + "\n" + 
-        	   "locality: " + this.locality + "\n" + 
-        	   "street: " +  this.street + "\n";
+        	   "hotel: " + this.hotel + "\n" + 
+        	   "dateIn: " + this.dateIn + "\n" + 
+        	   "dateOut: " +  this.dateOut + "\n";
     }
 }
